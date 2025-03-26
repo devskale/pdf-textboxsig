@@ -41,13 +41,22 @@
     operation = "";
   }
   function handlePanStart(event) {
-    startX = event.detail.x;
-    startY = event.detail.y;
-    operation = "move";
+  startX = event.detail.x;
+  startY = event.detail.y;
+  
+  // Dispatch an event to App.svelte to mark this object as selected
+  dispatch("update", { selected: true });
+  
+  if (event.detail.target === event.currentTarget) {
+    return (operation = "move");
   }
-  function onFocus() {
-    operation = "edit";
-  }
+  operation = "scale";
+  direction = event.detail.target.dataset.direction;
+}
+function onFocus() {
+  operation = "edit";
+  dispatch("update", { selected: true });
+}
   async function onBlur() {
     if (operation !== "edit" || operation === "tool") return;
     editable.blur();

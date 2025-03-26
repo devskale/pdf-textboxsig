@@ -28,6 +28,10 @@
   let selectedPageIndex = -1;
   let saving = false;
   let addingDrawing = false;
+
+// Add this to your existing variables in App.svelte
+let selectedObjectId = null;
+
   // for test purpose
   onMount(async () => {
     try {
@@ -112,6 +116,61 @@
   }
 }
 
+// Add this function to duplicate objects
+function duplicateObject(objectId) {
+  if (!objectId) return;
+  
+  // Find the object and its page index
+  let targetObject = null;
+  let targetPageIndex = -1;
+  
+  allObjects.forEach((objects, pIndex) => {
+    const obj = objects.find(o => o.id === objectId);
+    if (obj) {
+      targetObject = obj;
+      targetPageIndex = pIndex;
+    }
+  });
+  
+  if (!targetObject || targetPageIndex === -1) return;
+  
+  // Create a deep copy of the object with a new ID
+  const newObject = JSON.parse(JSON.stringify(targetObject));
+  newObject.id = genID();
+  
+  // Offset the position slightly (20px down and right)
+  newObject.x += 20;
+  newObject.y += 20;
+  
+  // Add the new object to the same page
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === targetPageIndex ? [...objects, newObject] : objects
+  );
+}
+
+// Add this keyboard event handler
+function handleKeyDown(event) {
+  // Check if 'd' key is pressed and an object is selected
+  if (event.key === 'd' && selectedObjectId) {
+    duplicateObject(selectedObjectId);
+  }
+}
+
+// Add this to your onMount function to register the keyboard event listener
+onMount(() => {
+  // Your existing onMount code...
+  
+  // Add keyboard event listener
+  window.addEventListener('keydown', handleKeyDown);
+  
+  return () => {
+    // Your existing cleanup code...
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+});
+
+
+
 function addBox() {
   const id = genID();
   const object = {
@@ -183,15 +242,17 @@ function addBox() {
   function selectPage(index) {
     selectedPageIndex = index;
   }
-  function updateObject(objectId, payload) {
-    allObjects = allObjects.map((objects, pIndex) =>
-      pIndex == selectedPageIndex
-        ? objects.map(object =>
-            object.id === objectId ? { ...object, ...payload } : object
-          )
-        : objects
-    );
-  }
+// Modify your updateObject function to track the selected object
+function updateObject(objectId, payload) {
+  selectedObjectId = objectId; // Set the selected object
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex == selectedPageIndex
+      ? objects.map(object =>
+          object.id === objectId ? { ...object, ...payload } : object
+        )
+      : objects
+  );
+}
   function deleteObject(objectId) {
     allObjects = allObjects.map((objects, pIndex) =>
       pIndex == selectedPageIndex

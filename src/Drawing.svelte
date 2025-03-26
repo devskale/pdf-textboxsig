@@ -67,14 +67,18 @@
     operation = "";
   }
   function handlePanStart(event) {
-    startX = event.detail.x;
-    startY = event.detail.y;
-    if (event.detail.target === event.currentTarget) {
-      return (operation = "move");
-    }
-    operation = "scale";
-    direction = event.detail.target.dataset.direction;
+  startX = event.detail.x;
+  startY = event.detail.y;
+  
+  // Dispatch an event to App.svelte to mark this object as selected
+  dispatch("update", { selected: true });
+  
+  if (event.detail.target === event.currentTarget) {
+    return (operation = "move");
   }
+  operation = "scale";
+  direction = event.detail.target.dataset.direction;
+}
   function onDelete() {
     dispatch("delete");
   }
