@@ -28,7 +28,11 @@
   let selectedPageIndex = -1;
   let saving = false;
   let addingDrawing = false;
-
+// Add these variables to track mouse position
+let mouseX = 0;
+let mouseY = 0;
+let currentPageElement = null;
+let currentPageRect = null;
 // Add this to your existing variables in App.svelte
 let selectedObjectId = null;
 
@@ -147,28 +151,118 @@ function duplicateObject(objectId) {
     pIndex === targetPageIndex ? [...objects, newObject] : objects
   );
 }
-
-// Add this keyboard event handler
+function handleMouseMove(event) {
+  // Update the mouse coordinates
+  mouseX = event.clientX;
+  mouseY = event.clientY;
+  
+  // Find which page the mouse is over
+  const pageElements = document.querySelectorAll('.page-container');
+  for (let i = 0; i < pageElements.length; i++) {
+    const rect = pageElements[i].getBoundingClientRect();
+    if (
+      mouseX >= rect.left &&
+      mouseX <= rect.right &&
+      mouseY >= rect.top &&
+      mouseY <= rect.bottom
+    ) {
+      currentPageElement = pageElements[i];
+      currentPageRect = rect;
+      selectedPageIndex = i;
+      break;
+    }
+  }
+}
 function handleKeyDown(event) {
+  // Only process if not in a text input field
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || 
+      event.target.getAttribute('contenteditable') === 'true') {
+    return;
+  }
+  
   // Check if 'd' key is pressed and an object is selected
   if (event.key === 'd' && selectedObjectId) {
     duplicateObject(selectedObjectId);
   }
+  
+  // Add text at mouse position when 't' is pressed
+  else if (event.key === 't' && currentPageRect && selectedPageIndex >= 0) {
+    // Calculate position relative to the page
+    const relativeX = (mouseX - currentPageRect.left) / pagesScale[selectedPageIndex];
+    const relativeY = (mouseY - currentPageRect.top) / pagesScale[selectedPageIndex];
+    addTextFieldAt(relativeX, relativeY);
+  }
+  
+  // Add box at mouse position when 'b' is pressed
+  else if (event.key === 'b' && currentPageRect && selectedPageIndex >= 0) {
+    // Calculate position relative to the page
+    const relativeX = (mouseX - currentPageRect.left) / pagesScale[selectedPageIndex];
+    const relativeY = (mouseY - currentPageRect.top) / pagesScale[selectedPageIndex];
+    addBoxAt(relativeX, relativeY);
+  }
 }
-
+// Function to add text field at specific position
+function addTextFieldAt(x, y, text = "New Text Field") {
+  const id = genID();
+  fetchFont(currentFont);
+  const object = {
+    id,
+    text,
+    type: "text",
+    size: 16,
+    width: 0, // recalculate after editing
+    lineHeight: 1.4,
+    fontFamily: currentFont,
+    x: x,
+    y: y
+  };
+  
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === selectedPageIndex ? [...objects, object] : objects
+  );
+}
+// Function to add box at specific position
+function addBoxAt(x, y) {
+  const id = genID();
+  const object = {
+    id,
+    type: "box",
+    width: 200,
+    height: 150,
+    x: x,
+    y: y,
+    color: "#FFFFFF",
+    opacity: 1,
+    borderWidth: 1,
+    borderColor: "#000000"
+  };
+  
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === selectedPageIndex ? [...objects, object] : objects
+  );
+}
 // Add this to your onMount function to register the keyboard event listener
-onMount(() => {
+onMount(async () => {
   // Your existing onMount code...
   
-  // Add keyboard event listener
+  // Add event listeners
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('mousemove', handleMouseMove);
+  
+  // Add a class to page containers for easier selection
+  setTimeout(() => {
+    const pageContainers = document.querySelectorAll('.p-5.w-full.flex.flex-col.items-center.overflow-hidden');
+    pageContainers.forEach(container => {
+      container.classList.add('page-container');
+    });
+  }, 1000);
   
   return () => {
     // Your existing cleanup code...
     window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('mousemove', handleMouseMove);
   };
 });
-
 
 
 function addBox() {
