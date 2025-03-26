@@ -7,6 +7,7 @@
   import Text from "./Text.svelte";
   import Drawing from "./Drawing.svelte";
   import DrawingCanvas from "./DrawingCanvas.svelte";
+  import Box from "./Box.svelte";
   import prepareAssets, { fetchFont } from "./utils/prepareAssets.js";
   import {
     readAsArrayBuffer,
@@ -105,6 +106,30 @@
       console.log(`Fail to add image.`, e);
     }
   }
+  function onAddBox() {
+  if (selectedPageIndex >= 0) {
+    addBox();
+  }
+}
+
+function addBox() {
+  const id = genID();
+  const object = {
+    id,
+    type: "box",
+    width: 200,
+    height: 150,
+    x: 0,
+    y: 0,
+    color: "#FFFFFF",
+    opacity: 1,
+    borderWidth: 1,
+    borderColor: "#000000"
+  };
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === selectedPageIndex ? [...objects, object] : objects
+  );
+}
   function onAddTextField() {
     if (selectedPageIndex >= 0) {
       addTextField();
@@ -239,6 +264,15 @@
         <img src="notes.svg" alt="An icon for adding text" />
       </label>
       <label
+  class="flex items-center justify-center h-full w-8 hover:bg-gray-500
+  cursor-pointer"
+  for="box"
+  class:cursor-not-allowed={selectedPageIndex < 0}
+  class:bg-gray-500={selectedPageIndex < 0}
+  on:click={onAddBox}>
+  <img src="box.svg" alt="An icon for adding boxes" />
+</label>
+      <label
         class="flex items-center justify-center h-full w-8 hover:bg-gray-500
         cursor-pointer"
         on:click={onAddDrawing}
@@ -336,6 +370,19 @@
                     lineHeight={object.lineHeight}
                     fontFamily={object.fontFamily}
                     pageScale={pagesScale[pIndex]} />
+                    {:else if object.type === 'box'}
+                      <Box
+                        on:update={e => updateObject(object.id, e.detail)}
+                        on:delete={() => deleteObject(object.id)}
+                        width={object.width}
+                        height={object.height}
+                        x={object.x}
+                        y={object.y}
+                        color={object.color}
+                        opacity={object.opacity}
+                        borderWidth={object.borderWidth}
+                        borderColor={object.borderColor}
+                        pageScale={pagesScale[pIndex]} />
                 {:else if object.type === 'drawing'}
                   <Drawing
                     on:update={e => updateObject(object.id, e.detail)}
