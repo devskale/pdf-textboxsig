@@ -5,7 +5,6 @@
   import { tapout } from "./utils/tapout.js";
   import { timeout } from "./utils/helper.js";
   import { Fonts } from "./utils/prepareAssets.js";
-  import { getEffectiveScale } from "./utils/scaling.js";
   export let size;
   export let text;
   export let lineHeight;
@@ -24,17 +23,11 @@
   let dx = 0;
   let dy = 0;
   let operation = "";
-  let direction = "";
-  
-  // Calculate effective scale for transformations
-  $: effectiveScale = getEffectiveScale(pageScale);
-  
   function handlePanMove(event) {
-    // Adjust movements based on effective scale
-    dx = (event.detail.x - startX) / effectiveScale;
-    dy = (event.detail.y - startY) / effectiveScale;
+    dx = (event.detail.x - startX) / pageScale;
+    dy = (event.detail.y - startY) / pageScale;
   }
-  
+
   function handlePanEnd(event) {
     if (dx === 0 && dy === 0) {
       return editable.focus();
@@ -47,26 +40,23 @@
     dy = 0;
     operation = "";
   }
-  
   function handlePanStart(event) {
-    startX = event.detail.x;
-    startY = event.detail.y;
-    
-    // Dispatch an event to App.svelte to mark this object as selected
-    dispatch("update", { selected: true });
-    
-    if (event.detail.target === event.currentTarget) {
-      return (operation = "move");
-    }
-    operation = "scale";
-    direction = event.detail.target.dataset.direction;
-  }
+  startX = event.detail.x;
+  startY = event.detail.y;
   
-  function onFocus() {
-    operation = "edit";
-    dispatch("update", { selected: true });
-  }
+  // Dispatch an event to App.svelte to mark this object as selected
+  dispatch("update", { selected: true });
   
+  if (event.detail.target === event.currentTarget) {
+    return (operation = "move");
+  }
+  operation = "scale";
+  direction = event.detail.target.dataset.direction;
+}
+function onFocus() {
+  operation = "edit";
+  dispatch("update", { selected: true });
+}
   async function onBlur() {
     if (operation !== "edit" || operation === "tool") return;
     editable.blur();
@@ -77,7 +67,6 @@
     });
     operation = "";
   }
-  
   async function onPaste(e) {
     // get text only
     const pastedText = e.clipboardData.getData("text");
@@ -86,7 +75,6 @@
     await timeout();
     sanitize();
   }
-  
   function onKeydown(e) {
     const childNodes = Array.from(editable.childNodes);
     if (e.keyCode === 13) {
@@ -121,11 +109,9 @@
       }
     }
   }
-  
   function onFocusTool() {
     operation = "tool";
   }
-  
   async function onBlurTool() {
     if (operation !== "tool" || operation === "edit") return;
     dispatch("update", {
@@ -136,7 +122,6 @@
     });
     operation = "";
   }
-  
   function sanitize() {
     let weirdNode;
     while (
@@ -147,18 +132,15 @@
       editable.removeChild(weirdNode);
     }
   }
-  
   function onChangeFont() {
     dispatch("selectFont", {
       name: _fontFamily
     });
   }
-  
   function render() {
     editable.innerHTML = text;
     editable.focus();
   }
-  
   function extractLines() {
     const nodes = editable.childNodes;
     const lines = [];
@@ -175,13 +157,12 @@
     lines.push(lineText);
     return lines;
   }
-  
   function onDelete() {
     dispatch("delete");
   }
-  
   onMount(render);
 </script>
+
 <style>
   .editing {
     @apply pointer-events-none border-gray-800 border-dashed;
@@ -190,6 +171,7 @@
     @apply block appearance-none h-6 w-full bg-white pl-2 pr-8 rounded-sm leading-tight;
   }
 </style>
+
 <svelte:options immutable={true} />
 {#if operation}
   <Toolbar>
@@ -257,7 +239,7 @@
   use:tapout
   on:tapout={onBlur}
   class="absolute left-0 top-0 select-none"
-  style="transform: translate({x + dx}px, {y + dy}px) scale({1/effectiveScale}); transform-origin: top left;">
+  style="transform: translate({x + dx}px, {y + dy}px);">
   <div
     use:pannable
     on:panstart={handlePanStart}

@@ -28,13 +28,13 @@
   let selectedPageIndex = -1;
   let saving = false;
   let addingDrawing = false;
-  // Add these variables to track mouse position
-  let mouseX = 0;
-  let mouseY = 0;
-  let currentPageElement = null;
-  let currentPageRect = null;
-  // Add this to your existing variables in App.svelte
-  let selectedObjectId = null;
+// Add these variables to track mouse position
+let mouseX = 0;
+let mouseY = 0;
+let currentPageElement = null;
+let currentPageRect = null;
+// Add this to your existing variables in App.svelte
+let selectedObjectId = null;
 
   // for test purpose
   onMount(async () => {
@@ -115,227 +115,174 @@
     }
   }
   function onAddBox() {
-    if (selectedPageIndex >= 0) {
-      addBox();
+  if (selectedPageIndex >= 0) {
+    addBox();
+  }
+}
+
+// Add this function to duplicate objects
+function duplicateObject(objectId) {
+  if (!objectId) return;
+  
+  // Find the object and its page index
+  let targetObject = null;
+  let targetPageIndex = -1;
+  
+  allObjects.forEach((objects, pIndex) => {
+    const obj = objects.find(o => o.id === objectId);
+    if (obj) {
+      targetObject = obj;
+      targetPageIndex = pIndex;
+    }
+  });
+  
+  if (!targetObject || targetPageIndex === -1) return;
+  
+  // Create a deep copy of the object with a new ID
+  const newObject = JSON.parse(JSON.stringify(targetObject));
+  newObject.id = genID();
+  
+  // Offset the position slightly (20px down and right)
+  newObject.x += 20;
+  newObject.y += 20;
+  
+  // Add the new object to the same page
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === targetPageIndex ? [...objects, newObject] : objects
+  );
+}
+function handleMouseMove(event) {
+  // Update the mouse coordinates
+  mouseX = event.clientX;
+  mouseY = event.clientY;
+  
+  // Find which page the mouse is over
+  const pageElements = document.querySelectorAll('.page-container');
+  for (let i = 0; i < pageElements.length; i++) {
+    const rect = pageElements[i].getBoundingClientRect();
+    if (
+      mouseX >= rect.left &&
+      mouseX <= rect.right &&
+      mouseY >= rect.top &&
+      mouseY <= rect.bottom
+    ) {
+      currentPageElement = pageElements[i];
+      currentPageRect = rect;
+      selectedPageIndex = i;
+      break;
     }
   }
-
-  // Add this function to duplicate objects
-  function duplicateObject(objectId) {
-    if (!objectId) return;
-
-    // Find the object and its page index
-    let targetObject = null;
-    let targetPageIndex = -1;
-
-    allObjects.forEach((objects, pIndex) => {
-      const obj = objects.find(o => o.id === objectId);
-      if (obj) {
-        targetObject = obj;
-        targetPageIndex = pIndex;
-      }
+}
+function handleKeyDown(event) {
+  // Only process if not in a text input field
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || 
+      event.target.getAttribute('contenteditable') === 'true') {
+    return;
+  }
+  
+  // Check if 'd' key is pressed and an object is selected
+  if (event.key === 'd' && selectedObjectId) {
+    duplicateObject(selectedObjectId);
+  }
+  
+  // Add text at mouse position when 't' is pressed
+  else if (event.key === 't' && currentPageRect && selectedPageIndex >= 0) {
+    // Calculate position relative to the page
+    const relativeX = (mouseX - currentPageRect.left) / pagesScale[selectedPageIndex];
+    const relativeY = (mouseY - currentPageRect.top) / pagesScale[selectedPageIndex];
+    addTextFieldAt(relativeX, relativeY);
+  }
+  
+  // Add box at mouse position when 'b' is pressed
+  else if (event.key === 'b' && currentPageRect && selectedPageIndex >= 0) {
+    // Calculate position relative to the page
+    const relativeX = (mouseX - currentPageRect.left) / pagesScale[selectedPageIndex];
+    const relativeY = (mouseY - currentPageRect.top) / pagesScale[selectedPageIndex];
+    addBoxAt(relativeX, relativeY);
+  }
+}
+// Function to add text field at specific position
+function addTextFieldAt(x, y, text = "New Text Field") {
+  const id = genID();
+  fetchFont(currentFont);
+  const object = {
+    id,
+    text,
+    type: "text",
+    size: 16,
+    width: 0, // recalculate after editing
+    lineHeight: 1.4,
+    fontFamily: currentFont,
+    x: x,
+    y: y
+  };
+  
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === selectedPageIndex ? [...objects, object] : objects
+  );
+}
+// Function to add box at specific position
+function addBoxAt(x, y) {
+  const id = genID();
+  const object = {
+    id,
+    type: "box",
+    width: 200,
+    height: 150,
+    x: x,
+    y: y,
+    color: "#FFFFFF",
+    opacity: 1,
+    borderWidth: 1,
+    borderColor: "#000000"
+  };
+  
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === selectedPageIndex ? [...objects, object] : objects
+  );
+}
+// Add this to your onMount function to register the keyboard event listener
+onMount(async () => {
+  // Your existing onMount code...
+  
+  // Add event listeners
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('mousemove', handleMouseMove);
+  
+  // Add a class to page containers for easier selection
+  setTimeout(() => {
+    const pageContainers = document.querySelectorAll('.p-5.w-full.flex.flex-col.items-center.overflow-hidden');
+    pageContainers.forEach(container => {
+      container.classList.add('page-container');
     });
+  }, 1000);
+  
+  return () => {
+    // Your existing cleanup code...
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('mousemove', handleMouseMove);
+  };
+});
 
-    if (!targetObject || targetPageIndex === -1) return;
 
-    // Create a deep copy of the object with a new ID
-    const newObject = JSON.parse(JSON.stringify(targetObject));
-    newObject.id = genID();
-
-    // Offset the position slightly (20px down and right)
-    newObject.x += 20;
-    newObject.y += 20;
-
-    // Add the new object to the same page
-    allObjects = allObjects.map((objects, pIndex) =>
-      pIndex === targetPageIndex ? [...objects, newObject] : objects
-    );
-  }
-  function handleMouseMove(event) {
-    // Update the mouse coordinates
-    mouseX = event.clientX;
-    mouseY = event.clientY;
-
-    // Find which page the mouse is over
-    const pageElements = document.querySelectorAll('.page-container');
-    for (let i = 0; i < pageElements.length; i++) {
-      const rect = pageElements[i].getBoundingClientRect();
-      if (
-        mouseX >= rect.left &&
-        mouseX <= rect.right &&
-        mouseY >= rect.top &&
-        mouseY <= rect.bottom
-      ) {
-        currentPageElement = pageElements[i];
-        currentPageRect = rect;
-        selectedPageIndex = i;
-        break;
-      }
-    }
-  }
-  function handleKeyDown(event) {
-    // Only process if not in a text input field
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' ||
-      event.target.getAttribute('contenteditable') === 'true') {
-      return;
-    }
-
-    // Check if 'd' key is pressed and an object is selected
-    if (event.key === 'd' && selectedObjectId) {
-      duplicateObject(selectedObjectId);
-    }
-
-    // Add text at mouse position when 't' is pressed
-    else if (event.key === 't' && currentPageRect && selectedPageIndex >= 0) {
-      // Calculate position relative to the page
-      const relativeX = (mouseX - currentPageRect.left) / pagesScale[selectedPageIndex];
-      const relativeY = (mouseY - currentPageRect.top) / pagesScale[selectedPageIndex];
-      addTextFieldAt(relativeX, relativeY);
-    }
-
-    // Add box at mouse position when 'b' is pressed
-    else if (event.key === 'b' && currentPageRect && selectedPageIndex >= 0) {
-      // Calculate position relative to the page
-      const relativeX = (mouseX - currentPageRect.left) / pagesScale[selectedPageIndex];
-      const relativeY = (mouseY - currentPageRect.top) / pagesScale[selectedPageIndex];
-      addBoxAt(relativeX, relativeY);
-    }
-  }
-  // Function to add text field at specific position
-  function addTextFieldAt(x, y, text = "New Text Field") {
-    const id = genID();
-    fetchFont(currentFont);
-    const object = {
-      id,
-      text,
-      type: "text",
-      size: 16,
-      width: 0, // recalculate after editing
-      lineHeight: 1.4,
-      fontFamily: currentFont,
-      x: x,
-      y: y
-    };
-
-    allObjects = allObjects.map((objects, pIndex) =>
-      pIndex === selectedPageIndex ? [...objects, object] : objects
-    );
-  }
-  // Function to add box at specific position
-  function addBoxAt(x, y) {
-    const id = genID();
-    const object = {
-      id,
-      type: "box",
-      width: 200,
-      height: 150,
-      x: x,
-      y: y,
-      color: "#FFFFFF",
-      opacity: 1,
-      borderWidth: 1,
-      borderColor: "#000000"
-    };
-
-    allObjects = allObjects.map((objects, pIndex) =>
-      pIndex === selectedPageIndex ? [...objects, object] : objects
-    );
-  }
-  // Add this to your onMount function to register the keyboard event listener
-  onMount(async () => {
-    // Your existing onMount code...
-
-    // Add event listeners
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('mousemove', handleMouseMove);
-
-    // Add a class to page containers for easier selection
-    setTimeout(() => {
-      const pageContainers = document.querySelectorAll('.p-5.w-full.flex.flex-col.items-center.overflow-hidden');
-      pageContainers.forEach(container => {
-        container.classList.add('page-container');
-      });
-    }, 1000);
-
-    return () => {
-      // Your existing cleanup code...
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  });
-
-  // Handle global keyboard shortcuts including zoom
-  function handleGlobalKeyDown(event) {
-    // Skip if we're in an input field
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || 
-      event.target.getAttribute('contenteditable') === 'true') {
-      return;
-    }
-
-    // Check for plus and minus keys for zooming
-    if (selectedPageIndex >= 0 && pages[selectedPageIndex]) {
-      const page = pages[selectedPageIndex];
-
-      // Handle plus key (both + and shift+=)
-      if ((event.key === '+' || (event.key === '=' && event.shiftKey))) {
-        event.preventDefault();
-        // Trigger zoom in on current page
-        const currentZoom = page.zoomLevel || 1;
-        page.zoomLevel = Math.min(currentZoom + 0.1, 3);
-        pagesScale[selectedPageIndex] = pagesScale[selectedPageIndex] * (page.zoomLevel / currentZoom);
-        // Force refresh
-        allObjects = [...allObjects];
-        return;
-      }
-
-      // Handle minus key
-      if (event.key === '-' || event.key === '_') {
-        event.preventDefault();
-        // Trigger zoom out on current page
-        const currentZoom = page.zoomLevel || 1;
-        page.zoomLevel = Math.max(currentZoom - 0.1, 0.5);
-        pagesScale[selectedPageIndex] = pagesScale[selectedPageIndex] * (page.zoomLevel / currentZoom);
-        // Force refresh
-        allObjects = [...allObjects];
-        return;
-      }
-    }
-
-    // Process other keyboard shortcuts as before
-    handleKeyDown(event);
-  }
-
-  // Add this to your onMount function to register the global keyboard event listeners
-  onMount(async () => {
-    // ...existing code...
-
-    // Add event listeners for keyboard shortcuts
-    window.addEventListener('keydown', handleGlobalKeyDown, true); // Use capture phase for priority
-
-    return () => {
-      // ...existing cleanup code...
-      window.removeEventListener('keydown', handleGlobalKeyDown, true);
-    };
-  });
-
-  function addBox() {
-    const id = genID();
-    const object = {
-      id,
-      type: "box",
-      width: 200,
-      height: 150,
-      x: 0,
-      y: 0,
-      color: "#FFFFFF",
-      opacity: 1,
-      borderWidth: 1,
-      borderColor: "#000000"
-    };
-    allObjects = allObjects.map((objects, pIndex) =>
-      pIndex === selectedPageIndex ? [...objects, object] : objects
-    );
-  }
+function addBox() {
+  const id = genID();
+  const object = {
+    id,
+    type: "box",
+    width: 200,
+    height: 150,
+    x: 0,
+    y: 0,
+    color: "#FFFFFF",
+    opacity: 1,
+    borderWidth: 1,
+    borderColor: "#000000"
+  };
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex === selectedPageIndex ? [...objects, object] : objects
+  );
+}
   function onAddTextField() {
     if (selectedPageIndex >= 0) {
       addTextField();
@@ -389,17 +336,17 @@
   function selectPage(index) {
     selectedPageIndex = index;
   }
-  // Modify your updateObject function to track the selected object
-  function updateObject(objectId, payload) {
-    selectedObjectId = objectId; // Set the selected object
-    allObjects = allObjects.map((objects, pIndex) =>
-      pIndex == selectedPageIndex
-        ? objects.map(object =>
+// Modify your updateObject function to track the selected object
+function updateObject(objectId, payload) {
+  selectedObjectId = objectId; // Set the selected object
+  allObjects = allObjects.map((objects, pIndex) =>
+    pIndex == selectedPageIndex
+      ? objects.map(object =>
           object.id === objectId ? { ...object, ...payload } : object
         )
-        : objects
-    );
-  }
+      : objects
+  );
+}
   function deleteObject(objectId) {
     allObjects = allObjects.map((objects, pIndex) =>
       pIndex == selectedPageIndex
@@ -407,20 +354,8 @@
         : objects
     );
   }
-  function onMeasure(e, i) {
-    // Store the scale for proper positioning and zoom level
-    pagesScale[i] = e.detail.scale;
-
-    // Force update of allObjects when zoom changes to refresh components
-    if (e.detail.zoomLevel) {
-      // Store the zoom level for this page
-      if (!pages[i].zoomLevel) pages[i].zoomLevel = e.detail.zoomLevel;
-      else if (pages[i].zoomLevel !== e.detail.zoomLevel) {
-        pages[i].zoomLevel = e.detail.zoomLevel;
-        // Force refresh
-        allObjects = [...allObjects];
-      }
-    }
+  function onMeasure(scale, i) {
+    pagesScale[i] = scale;
   }
   // FIXME: Should wait all objects finish their async work
   async function savePDF() {
@@ -433,8 +368,7 @@
         firstPage.view[2] - firstPage.view[0],
         firstPage.view[3] - firstPage.view[1]
       ];
-
-      // Pass pagesScale to ensure consistent positioning during download
+      
       await save(pdfFile, allObjects, pdfName, pagesScale, originalWidth, originalHeight);
     } catch (e) {
       console.error('Failed to save PDF:', e);
@@ -447,8 +381,7 @@
 <svelte:window
   on:dragenter|preventDefault
   on:dragover|preventDefault
-  on:drop|preventDefault={onUploadPDF}
-  on:keydown={handleGlobalKeyDown} />
+  on:drop|preventDefault={onUploadPDF} />
 <Tailwind />
 <main class="flex flex-col items-center py-16 bg-gray-100 min-h-screen">
   <div
@@ -493,14 +426,14 @@
         <img src="notes.svg" alt="An icon for adding text" />
       </label>
       <label
-        class="flex items-center justify-center h-full w-8 hover:bg-gray-500
-        cursor-pointer"
-        for="box"
-        class:cursor-not-allowed={selectedPageIndex < 0}
-        class:bg-gray-500={selectedPageIndex < 0}
-        on:click={onAddBox}>
-        <img src="box.svg" alt="An icon for adding boxes" />
-      </label>
+  class="flex items-center justify-center h-full w-8 hover:bg-gray-500
+  cursor-pointer"
+  for="box"
+  class:cursor-not-allowed={selectedPageIndex < 0}
+  class:bg-gray-500={selectedPageIndex < 0}
+  on:click={onAddBox}>
+  <img src="box.svg" alt="An icon for adding boxes" />
+</label>
       <label
         class="flex items-center justify-center h-full w-8 hover:bg-gray-500
         cursor-pointer"
@@ -563,22 +496,21 @@
     <div class="w-full">
       {#each pages as page, pIndex (page)}
         <div
-          class="p-5 w-full flex flex-col items-center overflow-hidden page-container"
+          class="p-5 w-full flex flex-col items-center overflow-hidden"
           on:mousedown={() => selectPage(pIndex)}
           on:touchstart={() => selectPage(pIndex)}>
           <div
             class="relative shadow-lg"
             class:shadow-outline={pIndex === selectedPageIndex}>
             <PDFPage
-              on:measure={e => onMeasure(e, pIndex)}
+              on:measure={e => onMeasure(e.detail.scale, pIndex)}
               {page} />
             <div
               class="absolute top-0 left-0 transform origin-top-left"
-              data-zoom-level={page.zoomLevel || 1}
               style="transform: scale({pagesScale[pIndex]}); touch-action: none;">
               {#each allObjects[pIndex] as object (object.id)}
                 {#if object.type === 'image'}
-                  <Image 
+                  <Image
                     on:update={e => updateObject(object.id, e.detail)}
                     on:delete={() => deleteObject(object.id)}
                     file={object.file}
@@ -600,19 +532,19 @@
                     lineHeight={object.lineHeight}
                     fontFamily={object.fontFamily}
                     pageScale={pagesScale[pIndex]} />
-                {:else if object.type === 'box'}
-                  <Box
-                    on:update={e => updateObject(object.id, e.detail)}
-                    on:delete={() => deleteObject(object.id)}
-                    width={object.width}
-                    height={object.height}
-                    x={object.x}
-                    y={object.y}
-                    color={object.color}
-                    opacity={object.opacity}
-                    borderWidth={object.borderWidth}
-                    borderColor={object.borderColor}
-                    pageScale={pagesScale[pIndex]} />
+                    {:else if object.type === 'box'}
+                      <Box
+                        on:update={e => updateObject(object.id, e.detail)}
+                        on:delete={() => deleteObject(object.id)}
+                        width={object.width}
+                        height={object.height}
+                        x={object.x}
+                        y={object.y}
+                        color={object.color}
+                        opacity={object.opacity}
+                        borderWidth={object.borderWidth}
+                        borderColor={object.borderColor}
+                        pageScale={pagesScale[pIndex]} />
                 {:else if object.type === 'drawing'}
                   <Drawing
                     on:update={e => updateObject(object.id, e.detail)}
@@ -626,6 +558,7 @@
                     pageScale={pagesScale[pIndex]} />
                 {/if}
               {/each}
+
             </div>
           </div>
         </div>
@@ -633,7 +566,7 @@
     </div>
   {:else}
     <div class="w-full flex-grow flex justify-center items-center">
-      <span class="font-bold text-3xl text-gray-500">Drag something here</span>
+      <span class=" font-bold text-3xl text-gray-500">Drag something here</span>
     </div>
   {/if}
 </main>
