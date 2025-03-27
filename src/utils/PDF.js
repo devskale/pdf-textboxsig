@@ -15,7 +15,6 @@ export async function save(pdfFile, objects, name) {
   }
   const pagesProcesses = pdfDoc.getPages().map(async (page, pageIndex) => {
     const pageObjects = objects[pageIndex];
-    // 'y' starts from bottom in PDFLib, use this to calculate y
     const pageHeight = page.getHeight();
     const embedProcesses = pageObjects.map(async (object) => {
       if (object.type === 'image') {
@@ -83,6 +82,25 @@ export async function save(pdfFile, objects, name) {
             y: pageHeight - y,
           });
           page.pushOperators(popGraphicsState());
+        };
+      } else if (object.type === 'box') {
+        const { x, y, width, height, color, opacity } = object;
+        return () => {
+            // Draw the box background with white border
+            page.drawRectangle({
+                x,
+                y: pageHeight - y - height,
+                width,
+                height,
+                color: PDFLib.rgb(
+                    parseInt(color.slice(1, 3), 16) / 255,
+                    parseInt(color.slice(3, 5), 16) / 255,
+                    parseInt(color.slice(5, 7), 16) / 255
+                ),
+                opacity,
+                borderWidth: 1,
+                borderColor: PDFLib.rgb(1, 1, 1) // White border (values between 0 and 1)
+            });
         };
       }
     });

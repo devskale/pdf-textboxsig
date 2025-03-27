@@ -362,9 +362,16 @@ function updateObject(objectId, payload) {
     if (!pdfFile || saving || !pages.length) return;
     saving = true;
     try {
-      await save(pdfFile, allObjects, pdfName, pagesScale);
+      // Get the first page to extract original dimensions
+      const firstPage = await pages[0];
+      const [originalWidth, originalHeight] = [
+        firstPage.view[2] - firstPage.view[0],
+        firstPage.view[3] - firstPage.view[1]
+      ];
+      
+      await save(pdfFile, allObjects, pdfName, pagesScale, originalWidth, originalHeight);
     } catch (e) {
-      console.log(e);
+      console.error('Failed to save PDF:', e);
     } finally {
       saving = false;
     }
