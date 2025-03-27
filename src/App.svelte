@@ -357,10 +357,10 @@ function updateObject(objectId, payload) {
   function onMeasure(e, i) {
     // Store the scale for proper positioning
     // The PDFPage component now sends both natural scale and zoom level
-    pagesScale[i] = e.detail.scale;
+    pagesScale[i] = e.scale;
     
     // Force update of all objects when zoom changes
-    if (e.detail.zoomLevel) {
+    if (e.zoomLevel) {
       allObjects = [...allObjects];
     }
   }
