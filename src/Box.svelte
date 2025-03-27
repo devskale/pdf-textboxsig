@@ -2,6 +2,7 @@
 <script>
     import { onMount, createEventDispatcher } from "svelte";
     import { pannable } from "./utils/pannable.js";
+    import { getEffectiveScale } from "./utils/scaling.js";
     export let width;
     export let height;
     export let x;
@@ -23,19 +24,13 @@
     let dh = 0;
     let ratio = null;
     
-    // Get access to the page zoom level from the parent component
-    let currentZoom = 1;
-    $: {
-      // Update when pageScale changes, as it now includes the zoom level
-      if (typeof pageScale === 'number') {
-        currentZoom = pageScale;
-      }
-    }
+    // Calculate effective scale for transformations
+    $: effectiveScale = getEffectiveScale(pageScale);
     
     function handlePanMove(event) {
-      // Adjust movements based on current zoom level
-      const _dx = (event.detail.x - startX) / pageScale;
-      const _dy = (event.detail.y - startY) / pageScale;
+      // Adjust movements based on effective scale
+      const _dx = (event.detail.x - startX) / effectiveScale;
+      const _dy = (event.detail.y - startY) / effectiveScale;
       if (operation === "move") {
         dx = _dx;
         dy = _dy;
@@ -185,7 +180,7 @@
   <svelte:options immutable={true} />
   <div
     class="absolute left-0 top-0 select-none"
-    style="width: {width + dw}px; height: {height + dh}px; transform: translate({x + dx}px, {y + dy}px); transform-origin: top left;">
+    style="width: {width + dw}px; height: {height + dh}px; transform: translate({x + dx}px, {y + dy}px) scale({1/effectiveScale}); transform-origin: top left;">
     
     <div
       style="background-color: {color}; opacity: {opacity}; border: {borderWidth}px solid {borderColor};"

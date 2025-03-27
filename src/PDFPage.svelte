@@ -93,20 +93,14 @@
 </script>
 
 <div class="relative">
-  <canvas
-    bind:this={canvas}
-    class="max-w-full"
-    style="width: {width * zoomLevel}px;"
-    {width}
-    {height} />
-  
-  <div class="absolute top-2 right-2 flex items-center bg-white rounded-md shadow-md p-1">
+  <!-- Zoom controls first to ensure they're rendered on top -->
+  <div class="absolute top-2 right-2 flex items-center bg-white rounded-md shadow-md p-1 z-20" style="transform: translateY(0);">
     <button 
       on:click={zoomOut}
       class="p-1 hover:bg-gray-200 rounded-md" 
       title="Zoom Out (- key)">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"></circle>
+        <circle cx="11" cy="11" r="8"></circle>-10">
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         <line x1="8" y1="11" x2="14" y2="11"></line>
       </svg>
@@ -124,4 +118,11 @@
       </svg>
     </button>
   </div>
+  
+  <canvas
+    bind:this={canvas}
+    class="max-w-full"
+    style="width: {width * zoomLevel}px;"
+    {width}
+    {height} />
 </div>

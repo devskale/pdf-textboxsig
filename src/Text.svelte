@@ -5,6 +5,7 @@
   import { tapout } from "./utils/tapout.js";
   import { timeout } from "./utils/helper.js";
   import { Fonts } from "./utils/prepareAssets.js";
+  import { getEffectiveScale } from "./utils/scaling.js";
   export let size;
   export let text;
   export let lineHeight;
@@ -25,19 +26,13 @@
   let operation = "";
   let direction = "";
   
-  // Get access to the page zoom level from the parent component
-  let currentZoom = 1;
-  $: {
-    // Update when pageScale changes, as it now includes the zoom level
-    if (typeof pageScale === 'number') {
-      currentZoom = pageScale;
-    }
-  }
+  // Calculate effective scale for transformations
+  $: effectiveScale = getEffectiveScale(pageScale);
   
   function handlePanMove(event) {
-    // Adjust movements based on current zoom level
-    dx = (event.detail.x - startX) / pageScale;
-    dy = (event.detail.y - startY) / pageScale;
+    // Adjust movements based on effective scale
+    dx = (event.detail.x - startX) / effectiveScale;
+    dy = (event.detail.y - startY) / effectiveScale;
   }
   
   function handlePanEnd(event) {
@@ -262,7 +257,7 @@
   use:tapout
   on:tapout={onBlur}
   class="absolute left-0 top-0 select-none"
-  style="transform: translate({x + dx}px, {y + dy}px);">
+  style="transform: translate({x + dx}px, {y + dy}px) scale({1/effectiveScale}); transform-origin: top left;">
   <div
     use:pannable
     on:panstart={handlePanStart}
