@@ -1,27 +1,27 @@
-import { readAsArrayBuffer } from './asyncReader.js';
-import { fetchFont, getAsset } from './prepareAssets';
-import { noop } from './helper.js';
+import { readAsArrayBuffer } from "./asyncReader.js";
+import { fetchFont, getAsset } from "./prepareAssets";
+import { noop } from "./helper.js";
 
 export async function save(pdfFile, objects, name) {
-  const PDFLib = await getAsset('PDFLib');
-  const download = await getAsset('download');
-  const makeTextPDF = await getAsset('makeTextPDF');
+  const PDFLib = await getAsset("PDFLib");
+  const download = await getAsset("download");
+  const makeTextPDF = await getAsset("makeTextPDF");
   let pdfDoc;
   try {
     pdfDoc = await PDFLib.PDFDocument.load(await readAsArrayBuffer(pdfFile));
   } catch (e) {
-    console.log('Failed to load PDF.');
+    console.log("Failed to load PDF.");
     throw e;
   }
   const pagesProcesses = pdfDoc.getPages().map(async (page, pageIndex) => {
     const pageObjects = objects[pageIndex];
     const pageHeight = page.getHeight();
     const embedProcesses = pageObjects.map(async (object) => {
-      if (object.type === 'image') {
+      if (object.type === "image") {
         let { file, x, y, width, height } = object;
         let img;
         try {
-          if (file.type === 'image/jpeg') {
+          if (file.type === "image/jpeg") {
             img = await pdfDoc.embedJpg(await readAsArrayBuffer(file));
           } else {
             img = await pdfDoc.embedPng(await readAsArrayBuffer(file));
@@ -34,10 +34,10 @@ export async function save(pdfFile, objects, name) {
               height,
             });
         } catch (e) {
-          console.log('Failed to embed image.', e);
+          console.log("Failed to embed image.", e);
           return noop;
         }
-      } else if (object.type === 'text') {
+      } else if (object.type === "text") {
         let { x, y, lines, lineHeight, size, fontFamily, width } = object;
         const height = size * lineHeight * lines.length;
         const font = await fetchFont(fontFamily);
@@ -50,7 +50,7 @@ export async function save(pdfFile, objects, name) {
             height,
             font: font.buffer || fontFamily, // built-in font family
             dy: font.correction(size, lineHeight),
-          }),
+          })
         );
         return () =>
           page.drawPage(textPage, {
@@ -59,7 +59,7 @@ export async function save(pdfFile, objects, name) {
             x,
             y: pageHeight - y - height,
           });
-      } else if (object.type === 'drawing') {
+      } else if (object.type === "drawing") {
         let { x, y, path, scale } = object;
         const {
           pushGraphicsState,
@@ -73,7 +73,7 @@ export async function save(pdfFile, objects, name) {
           page.pushOperators(
             pushGraphicsState(),
             setLineCap(LineCapStyle.Round),
-            setLineJoin(LineJoinStyle.Round),
+            setLineJoin(LineJoinStyle.Round)
           );
           page.drawSvgPath(path, {
             borderWidth: 5,
@@ -83,24 +83,33 @@ export async function save(pdfFile, objects, name) {
           });
           page.pushOperators(popGraphicsState());
         };
-      } else if (object.type === 'box') {
-        const { x, y, width, height, color, opacity } = object;
+      } else if (object.type === "box") {
+        const {
+          x,
+          y,
+          width,
+          height,
+          color,
+          opacity,
+          borderWidth,
+          borderColor,
+        } = object;
         return () => {
-            // Draw the box background with white border
-            page.drawRectangle({
-                x,
-                y: pageHeight - y - height,
-                width,
-                height,
-                color: PDFLib.rgb(
-                    parseInt(color.slice(1, 3), 16) / 255,
-                    parseInt(color.slice(3, 5), 16) / 255,
-                    parseInt(color.slice(5, 7), 16) / 255
-                ),
-                opacity,
-                borderWidth: 1,
-                borderColor: PDFLib.rgb(1, 1, 1) // White border (values between 0 and 1)
-            });
+          // Draw the box with specified properties
+          page.drawRectangle({
+            x,
+            y: pageHeight - y - height,
+            width,
+            height,
+            color: PDFLib.rgb(
+              parseInt(color.slice(1, 3), 16) / 255,
+              parseInt(color.slice(3, 5), 16) / 255,
+              parseInt(color.slice(5, 7), 16) / 255
+            ),
+            opacity,
+            borderWidth,
+            borderColor: PDFLib.rgb(1, 1, 1), // White border color
+          });
         };
       }
     });
@@ -111,9 +120,9 @@ export async function save(pdfFile, objects, name) {
   await Promise.all(pagesProcesses);
   try {
     const pdfBytes = await pdfDoc.save();
-    download(pdfBytes, name, 'application/pdf');
+    download(pdfBytes, name, "application/pdf");
   } catch (e) {
-    console.log('Failed to save PDF.');
+    console.log("Failed to save PDF.");
     throw e;
   }
 }
