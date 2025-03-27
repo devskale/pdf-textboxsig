@@ -1,17 +1,17 @@
 const scripts = [
   {
-    name: 'pdfjsLib',
-    src: 'https://unpkg.com/pdfjs-dist@2.3.200/build/pdf.min.js',
+    name: "pdfjsLib",
+    src: "https://unpkg.com/pdfjs-dist@2.3.200/build/pdf.min.js",
   },
   {
-    name: 'PDFLib',
-    src: 'https://unpkg.com/pdf-lib@1.4.0/dist/pdf-lib.min.js',
+    name: "PDFLib",
+    src: "https://unpkg.com/pdf-lib@1.4.0/dist/pdf-lib.min.js",
   },
   {
-    name: 'download',
-    src: 'https://unpkg.com/downloadjs@1.4.7',
+    name: "download",
+    src: "https://unpkg.com/downloadjs@1.4.7",
   },
-  { name: 'makeTextPDF', src: '/makeTextPDF.js' },
+  { name: "makeTextPDF", src: "/makeTextPDF.js" },
 ];
 
 const assets = {};
@@ -25,7 +25,7 @@ export function getAsset(name) {
 export function prepareAsset({ name, src }) {
   if (assets[name]) return assets[name];
   assets[name] = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = src;
     script.onload = () => {
       resolve(window[name]);
@@ -33,7 +33,9 @@ export function prepareAsset({ name, src }) {
     };
     script.onerror = () => {
       reject(`The script ${name} didn't load correctly.`);
-      alert(`Some scripts did not load correctly. Please reload and try again.`)
+      alert(
+        `Some scripts did not load correctly. Please reload and try again.`
+      );
     };
     document.body.appendChild(script);
   });
@@ -56,7 +58,7 @@ const fonts = {
       return (size * lineHeight - size) / 2 + size / 10;
     },
   },
-  'Times-Roman': {
+  "Times-Roman": {
     correction(size, lineHeight) {
       return (size * lineHeight - size) / 2 + size / 7;
     },
@@ -65,12 +67,6 @@ const fonts = {
 // Available fonts
 export const Fonts = {
   ...fonts,
-  標楷體: {
-    src: '/CK.ttf', // 9.9 MB
-    correction(size, lineHeight) {
-      return (size * lineHeight - size) / 2;
-    },
-  },
 };
 
 export function fetchFont(name) {
@@ -81,7 +77,7 @@ export function fetchFont(name) {
     .then((r) => r.arrayBuffer())
     .then((fontBuffer) => {
       const fontFace = new FontFace(name, fontBuffer);
-      fontFace.display = 'swap';
+      fontFace.display = "swap";
       fontFace.load().then(() => document.fonts.add(fontFace));
       return {
         ...font,

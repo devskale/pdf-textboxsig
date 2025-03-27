@@ -459,7 +459,7 @@ function updateObject(objectId, payload) {
       class:bg-blue-700={pages.length === 0 || saving || !pdfFile}>
       {saving ? 'Saving' : 'Save'}
     </button>
-    <a href="https://github.com/ShizukuIchi/pdf-editor">
+    <a href="https://github.com/devskale/pdf-textboxsig">
       <img
         src="/GitHub-Mark-32px.png"
         alt="A GitHub icon leads to personal GitHub page" />
@@ -470,7 +470,7 @@ function updateObject(objectId, payload) {
       transition:fly={{ y: -200, duration: 500 }}
       class="fixed z-10 top-0 left-0 right-0 border-b border-gray-300 bg-white
       shadow-lg"
-      style="height: 50%;">
+      style="height: 50%; width: 90vw;">
       <DrawingCanvas
         on:finish={e => {
           const { originWidth, originHeight, path } = e.detail;
@@ -481,7 +481,7 @@ function updateObject(objectId, payload) {
           addDrawing(originWidth, originHeight, path, scale);
           addingDrawing = false;
         }}
-        on:cancel={() => (addingDrawing = false)} />
+        on:cancel={() => (addingDrawing = false)} width={1200} />
     </div>
   {/if}
   {#if pages.length}
@@ -493,7 +493,7 @@ function updateObject(objectId, payload) {
         class="flex-grow bg-transparent"
         bind:value={pdfName} />
     </div>
-    <div class="w-full">
+    <div class="w-full max-w-[1200px] mx-auto">
       {#each pages as page, pIndex (page)}
         <div
           class="p-5 w-full flex flex-col items-center overflow-hidden"
