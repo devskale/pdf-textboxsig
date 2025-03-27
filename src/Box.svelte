@@ -176,7 +176,7 @@
   <div
     class="absolute left-0 top-0 select-none"
     style="width: {width + dw}px; height: {height + dh}px; transform: translate({x + dx}px,
-    {y + dy}px);">
+    {y + dy}px); transform-origin: top left;">
     
     <div
       style="background-color: {color}; opacity: {opacity}; border: {borderWidth}px solid {borderColor};"

@@ -354,8 +354,15 @@ function updateObject(objectId, payload) {
         : objects
     );
   }
-  function onMeasure(scale, i) {
-    pagesScale[i] = scale;
+  function onMeasure(e, i) {
+    // Store the scale for proper positioning
+    // The PDFPage component now sends both natural scale and zoom level
+    pagesScale[i] = e.detail.scale;
+    
+    // Force update of all objects when zoom changes
+    if (e.detail.zoomLevel) {
+      allObjects = [...allObjects];
+    }
   }
   // FIXME: Should wait all objects finish their async work
   async function savePDF() {
@@ -369,6 +376,7 @@ function updateObject(objectId, payload) {
         firstPage.view[3] - firstPage.view[1]
       ];
       
+      // Pass pagesScale to ensure consistent positioning during download
       await save(pdfFile, allObjects, pdfName, pagesScale, originalWidth, originalHeight);
     } catch (e) {
       console.error('Failed to save PDF:', e);
@@ -507,7 +515,7 @@ function updateObject(objectId, payload) {
               {page} />
             <div
               class="absolute top-0 left-0 transform origin-top-left"
-              style="transform: scale({pagesScale[pIndex]}); touch-action: none;">
+              style="transform: scale({pagesScale[pIndex] * ((pages[pIndex] && pages[pIndex].zoomLevel) || 1)}); touch-action: none;">
               {#each allObjects[pIndex] as object (object.id)}
                 {#if object.type === 'image'}
                   <Image

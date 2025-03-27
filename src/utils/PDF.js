@@ -2,7 +2,14 @@ import { readAsArrayBuffer } from "./asyncReader.js";
 import { fetchFont, getAsset } from "./prepareAssets";
 import { noop } from "./helper.js";
 
-export async function save(pdfFile, objects, name) {
+export async function save(
+  pdfFile,
+  objects,
+  name,
+  pagesScale,
+  originalWidth,
+  originalHeight
+) {
   const PDFLib = await getAsset("PDFLib");
   const download = await getAsset("download");
   const makeTextPDF = await getAsset("makeTextPDF");
@@ -120,7 +127,8 @@ export async function save(pdfFile, objects, name) {
   await Promise.all(pagesProcesses);
   try {
     const pdfBytes = await pdfDoc.save();
-    download(pdfBytes, name, "application/pdf");
+    const newName = name.replace(/\.pdf$/, "_red.pdf");
+    download(pdfBytes, newName, "application/pdf");
   } catch (e) {
     console.log("Failed to save PDF.");
     throw e;
