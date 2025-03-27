@@ -359,10 +359,16 @@ function updateObject(objectId, payload) {
     // The PDFPage component now sends both natural scale and zoom level
     pagesScale[i] = e.scale;
     
-    // Force update of all objects when zoom changes
-    if (e.zoomLevel) {
-      allObjects = [...allObjects];
+    // Store the zoom level to apply to all objects
+    const zoomLevel = e.zoomLevel || 1;
+    
+    // Update the page object with the zoom level
+    if (pages[i]) {
+      pages[i].zoomLevel = zoomLevel;
     }
+    
+    // Force update of all objects when zoom changes
+    allObjects = [...allObjects];
   }
   // FIXME: Should wait all objects finish their async work
   async function savePDF() {
@@ -511,7 +517,7 @@ function updateObject(objectId, payload) {
             class="relative shadow-lg"
             class:shadow-outline={pIndex === selectedPageIndex}>
             <PDFPage
-              on:measure={e => onMeasure(e.detail.scale, pIndex)}
+              on:measure={e => onMeasure(e.detail, pIndex)}
               {page} />
             <div
               class="absolute top-0 left-0 transform origin-top-left"

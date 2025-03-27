@@ -23,11 +23,23 @@
   let dx = 0;
   let dy = 0;
   let operation = "";
+  let direction = "";
+  
+  // Get access to the page zoom level from the parent component
+  let currentZoom = 1;
+  $: {
+    // Update when pageScale changes, as it now includes the zoom level
+    if (typeof pageScale === 'number') {
+      currentZoom = pageScale;
+    }
+  }
+  
   function handlePanMove(event) {
+    // Adjust movements based on current zoom level
     dx = (event.detail.x - startX) / pageScale;
     dy = (event.detail.y - startY) / pageScale;
   }
-
+  
   function handlePanEnd(event) {
     if (dx === 0 && dy === 0) {
       return editable.focus();
@@ -40,23 +52,26 @@
     dy = 0;
     operation = "";
   }
+  
   function handlePanStart(event) {
-  startX = event.detail.x;
-  startY = event.detail.y;
-  
-  // Dispatch an event to App.svelte to mark this object as selected
-  dispatch("update", { selected: true });
-  
-  if (event.detail.target === event.currentTarget) {
-    return (operation = "move");
+    startX = event.detail.x;
+    startY = event.detail.y;
+    
+    // Dispatch an event to App.svelte to mark this object as selected
+    dispatch("update", { selected: true });
+    
+    if (event.detail.target === event.currentTarget) {
+      return (operation = "move");
+    }
+    operation = "scale";
+    direction = event.detail.target.dataset.direction;
   }
-  operation = "scale";
-  direction = event.detail.target.dataset.direction;
-}
-function onFocus() {
-  operation = "edit";
-  dispatch("update", { selected: true });
-}
+  
+  function onFocus() {
+    operation = "edit";
+    dispatch("update", { selected: true });
+  }
+  
   async function onBlur() {
     if (operation !== "edit" || operation === "tool") return;
     editable.blur();
@@ -67,6 +82,7 @@ function onFocus() {
     });
     operation = "";
   }
+  
   async function onPaste(e) {
     // get text only
     const pastedText = e.clipboardData.getData("text");
@@ -75,6 +91,7 @@ function onFocus() {
     await timeout();
     sanitize();
   }
+  
   function onKeydown(e) {
     const childNodes = Array.from(editable.childNodes);
     if (e.keyCode === 13) {
@@ -109,9 +126,11 @@ function onFocus() {
       }
     }
   }
+  
   function onFocusTool() {
     operation = "tool";
   }
+  
   async function onBlurTool() {
     if (operation !== "tool" || operation === "edit") return;
     dispatch("update", {
@@ -122,6 +141,7 @@ function onFocus() {
     });
     operation = "";
   }
+  
   function sanitize() {
     let weirdNode;
     while (
@@ -132,15 +152,18 @@ function onFocus() {
       editable.removeChild(weirdNode);
     }
   }
+  
   function onChangeFont() {
     dispatch("selectFont", {
       name: _fontFamily
     });
   }
+  
   function render() {
     editable.innerHTML = text;
     editable.focus();
   }
+  
   function extractLines() {
     const nodes = editable.childNodes;
     const lines = [];
@@ -157,12 +180,13 @@ function onFocus() {
     lines.push(lineText);
     return lines;
   }
+  
   function onDelete() {
     dispatch("delete");
   }
+  
   onMount(render);
 </script>
-
 <style>
   .editing {
     @apply pointer-events-none border-gray-800 border-dashed;
@@ -171,7 +195,6 @@ function onFocus() {
     @apply block appearance-none h-6 w-full bg-white pl-2 pr-8 rounded-sm leading-tight;
   }
 </style>
-
 <svelte:options immutable={true} />
 {#if operation}
   <Toolbar>

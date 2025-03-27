@@ -23,7 +23,17 @@
     let dh = 0;
     let ratio = null;
     
+    // Get access to the page zoom level from the parent component
+    let currentZoom = 1;
+    $: {
+      // Update when pageScale changes, as it now includes the zoom level
+      if (typeof pageScale === 'number') {
+        currentZoom = pageScale;
+      }
+    }
+    
     function handlePanMove(event) {
+      // Adjust movements based on current zoom level
       const _dx = (event.detail.x - startX) / pageScale;
       const _dy = (event.detail.y - startY) / pageScale;
       if (operation === "move") {
@@ -120,18 +130,18 @@
     }
     
     function handlePanStart(event) {
-  startX = event.detail.x;
-  startY = event.detail.y;
-  
-  // Dispatch an event to App.svelte to mark this object as selected
-  dispatch("update", { selected: true });
-  
-  if (event.detail.target === event.currentTarget) {
-    return (operation = "move");
-  }
-  operation = "scale";
-  direction = event.detail.target.dataset.direction;
-}
+      startX = event.detail.x;
+      startY = event.detail.y;
+      
+      // Dispatch an event to App.svelte to mark this object as selected
+      dispatch("update", { selected: true });
+      
+      if (event.detail.target === event.currentTarget) {
+        return (operation = "move");
+      }
+      operation = "scale";
+      direction = event.detail.target.dataset.direction;
+    }
     
     function onDelete() {
       dispatch("delete");
@@ -175,8 +185,7 @@
   <svelte:options immutable={true} />
   <div
     class="absolute left-0 top-0 select-none"
-    style="width: {width + dw}px; height: {height + dh}px; transform: translate({x + dx}px,
-    {y + dy}px); transform-origin: top left;">
+    style="width: {width + dw}px; height: {height + dh}px; transform: translate({x + dx}px, {y + dy}px); transform-origin: top left;">
     
     <div
       style="background-color: {color}; opacity: {opacity}; border: {borderWidth}px solid {borderColor};"

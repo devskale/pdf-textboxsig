@@ -19,10 +19,22 @@
   let dw = 0;
   let direction = "";
   const ratio = originWidth / originHeight;
+  
+  // Get access to the page zoom level from the parent component
+  let currentZoom = 1;
+  $: {
+    // Update when pageScale changes, as it now includes the zoom level
+    if (typeof pageScale === 'number') {
+      currentZoom = pageScale;
+    }
+  }
+  
   async function render() {
     svg.setAttribute("viewBox", `0 0 ${originWidth} ${originHeight}`);
   }
+  
   function handlePanMove(event) {
+    // Adjust movements based on current zoom level
     const _dx = (event.detail.x - startX) / pageScale;
     const _dy = (event.detail.y - startY) / pageScale;
     if (operation === "move") {
@@ -66,22 +78,25 @@
     }
     operation = "";
   }
+  
   function handlePanStart(event) {
-  startX = event.detail.x;
-  startY = event.detail.y;
-  
-  // Dispatch an event to App.svelte to mark this object as selected
-  dispatch("update", { selected: true });
-  
-  if (event.detail.target === event.currentTarget) {
-    return (operation = "move");
+    startX = event.detail.x;
+    startY = event.detail.y;
+    
+    // Dispatch an event to App.svelte to mark this object as selected
+    dispatch("update", { selected: true });
+    
+    if (event.detail.target === event.currentTarget) {
+      return (operation = "move");
+    }
+    operation = "scale";
+    direction = event.detail.target.dataset.direction;
   }
-  operation = "scale";
-  direction = event.detail.target.dataset.direction;
-}
+  
   function onDelete() {
     dispatch("delete");
   }
+  
   onMount(render);
 </script>
 
@@ -89,30 +104,30 @@
   .operation {
     background-color: rgba(0, 0, 0, 0.1);
   }
+  .resize-dot {
+    @apply absolute rounded-full border border-gray-600 w-3 h-3 bg-white;
+  }
 </style>
 
 <svelte:options immutable={true} />
 <div
-  class="absolute left-0 top-0 select-none"
-  style="width: {width + dw}px; height: {(width + dw) / ratio}px; transform:
-  translate({x + dx}px, {y + dy}px);">
+  class="absolute left-0 top-0"
+  style="width: {width + dw}px; transform: translate({x + dx}px, {y + dy}px);">
   <div
     use:pannable
     on:panstart={handlePanStart}
     on:panmove={handlePanMove}
     on:panend={handlePanEnd}
-    class="absolute w-full h-full cursor-grab border border-gray-400
-    border-dashed"
-    class:cursor-grabbing={operation === 'move'}
+    class="absolute w-full h-full"
     class:operation>
     <div
       data-direction="left-top"
-      class="absolute left-0 top-0 w-10 h-10 bg-green-400 rounded-full
-      cursor-nwse-resize transform -translate-x-1/2 -translate-y-1/2 md:scale-25" />
+      class="resize-dot left-0 top-0 transform -translate-x-1/2 -translate-y-1/2
+      cursor-nwse-resize" />
     <div
       data-direction="right-bottom"
-      class="absolute right-0 bottom-0 w-10 h-10 bg-green-400 rounded-full
-      cursor-nwse-resize transform translate-x-1/2 translate-y-1/2 md:scale-25" />
+      class="resize-dot right-0 bottom-0 transform translate-x-1/2
+      translate-y-1/2 cursor-nwse-resize" />
   </div>
   <div
     on:click={onDelete}
@@ -120,13 +135,11 @@
     cursor-pointer transform -translate-y-1/2 md:scale-25">
     <img class="w-full h-full" src="/delete.svg" alt="delete object" />
   </div>
-  <svg bind:this={svg} width="100%" height="100%">
-    <path
-      stroke-width="5"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-      stroke="black"
-      fill="none"
-      d={path} />
+  <svg
+    bind:this={svg}
+    viewBox={`0 0 ${originWidth} ${originHeight}`}
+    class="w-full h-auto"
+    style="width: 100%;">
+    <path d={path} stroke="black" fill="none" stroke-width="5" />
   </svg>
 </div>
