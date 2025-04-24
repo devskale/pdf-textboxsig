@@ -52,13 +52,23 @@ export async function save(pdfFile, objects, name) {
             dy: font.correction(size, lineHeight),
           })
         );
-        return () =>
+        return () => {
+          // draw white background behind text
+          page.drawRectangle({
+            x,
+            y: pageHeight - y - height,
+            width,
+            height,
+            color: PDFLib.rgb(1, 1, 1),
+          });
+          // then draw the text page
           page.drawPage(textPage, {
             width,
             height,
             x,
             y: pageHeight - y - height,
           });
+        };
       } else if (object.type === "drawing") {
         let { x, y, path, scale } = object;
         const {

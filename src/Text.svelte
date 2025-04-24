@@ -170,6 +170,11 @@ function onFocus() {
   .font-family {
     @apply block appearance-none h-6 w-full bg-white pl-2 pr-8 rounded-sm leading-tight;
   }
+
+  /* ensure text has a white backing in the editor/preview */
+  .text-container {
+    position: absolute;
+  }
 </style>
 
 <svelte:options immutable={true} />
@@ -236,28 +241,39 @@ function onFocus() {
   </Toolbar>
 {/if}
 <div
-  use:tapout
-  on:tapout={onBlur}
-  class="absolute left-0 top-0 select-none"
-  style="transform: translate({x + dx}px, {y + dy}px);">
+  class="text-container"
+  style="
+    left: {x * pageScale}px;
+    top: {y * pageScale}px;
+    font-size: {size * pageScale}px;
+    line-height: {lineHeight};
+    font-family: {fontFamily};
+  "
+>
   <div
-    use:pannable
-    on:panstart={handlePanStart}
-    on:panmove={handlePanMove}
-    on:panend={handlePanEnd}
-    class="absolute w-full h-full cursor-grab border border-dotted
-    border-gray-500"
-    class:cursor-grab={!operation}
-    class:cursor-grabbing={operation === 'move'}
-    class:editing={['edit', 'tool'].includes(operation)} />
-  <div
-    bind:this={editable}
-    on:focus={onFocus}
-    on:keydown={onKeydown}
-    on:paste|preventDefault={onPaste}
-    contenteditable="true"
-    spellcheck="false"
-    class="outline-none whitespace-no-wrap"
-    style="font-size: {_size}px; font-family: '{_fontFamily}', serif;
-    line-height: {_lineHeight}; -webkit-user-select: text;" />
+    use:tapout
+    on:tapout={onBlur}
+    class="absolute left-0 top-0 select-none"
+    style="transform: translate({dx * pageScale}px, {dy * pageScale}px);">
+    <div
+      use:pannable
+      on:panstart={handlePanStart}
+      on:panmove={handlePanMove}
+      on:panend={handlePanEnd}
+      class="absolute w-full h-full cursor-grab border border-dotted
+      border-gray-500"
+      class:cursor-grab={!operation}
+      class:cursor-grabbing={operation === 'move'}
+      class:editing={['edit', 'tool'].includes(operation)} />
+    <div
+      bind:this={editable}
+      on:focus={onFocus}
+      on:keydown={onKeydown}
+      on:paste|preventDefault={onPaste}
+      contenteditable="true"
+      spellcheck="false"
+      class="outline-none whitespace-no-wrap bg-white"
+      style="font-size: {_size}px; font-family: '{_fontFamily}', serif;
+      line-height: {_lineHeight}; -webkit-user-select: text;" />
+  </div>
 </div>
